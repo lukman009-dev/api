@@ -9,10 +9,17 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtConfig jwtConfig;
+
+    public SecurityConfig(JwtConfig jwtConfig) {
+        this.jwtConfig = jwtConfig;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -25,19 +32,26 @@ public class SecurityConfig {
 
                 // 3. Define URL Access Permissions
                 .authorizeHttpRequests(auth -> auth
-                        // Allow all public endpoints
+                        // Public endpoints
                         .requestMatchers("/api/v1/public/**").permitAll()
-
-                        // Allow Auth & Registration POST endpoints
+                        
+                        // Auth & Registration endpoints (Public)
+                        .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/resident/register").permitAll()
-
-                        // Permit all resident and admin routes for easy Postman testing
-                        .requestMatchers("/api/v1/resident/**").permitAll()
-                        .requestMatchers("/api/v1/admin/**").permitAll()
-
+                        
+                        // Resident endpoints (require RESIDENT or ADMIN role)
+                        .requestMatchers("/api/v1/resident/**").hasAnyRole("RESIDENT", "ADMIN")
+                        
+                        // Admin endpoints (require ADMIN role)
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        
+                        // All other requests require authentication
                         .anyRequest().authenticated()
-                );
+                )
+                // Add JWT filter before the default authentication filter
+                .addFilterBefore(new JwtAuthenticationFilter(jwtConfig), 
+                               UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
