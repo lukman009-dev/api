@@ -4,6 +4,7 @@ import com.shehia_management.api.config.JwtConfig;
 import com.shehia_management.api.dto.LoginRequest;
 import com.shehia_management.api.dto.LoginResponse;
 import com.shehia_management.api.entity.User;
+import com.shehia_management.api.enums.UserStatus;
 import com.shehia_management.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,11 +26,19 @@ public class AuthController {
         User user = userRepository.findByZanId(loginRequest.getZanId())
                 .orElse(null);
 
+        // Validate credentials
         if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse("Invalid credentials", "Authentication failed"));
         }
 
+        // Check if user account is suspended
+        if (user.getStatus() == UserStatus.SUSPENDED) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResponse("Account suspended", "Your account has been suspended by administrator"));
+        }
+
+        // Generate JWT token
         String token = jwtConfig.generateToken(user.getZanId(), user.getRole().toString());
         LoginResponse response = new LoginResponse(token, user.getZanId(), user.getRole().toString());
         
@@ -41,7 +50,10 @@ public class AuthController {
         return ResponseEntity.ok(new SuccessResponse("Logged out successfully"));
     }
 
-    // Helper classes for responses
+    // ============================================================================
+    // Helper Response Classes
+    // ============================================================================
+    
     public static class SuccessResponse {
         public String message;
         
