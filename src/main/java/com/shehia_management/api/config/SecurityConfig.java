@@ -32,19 +32,60 @@ public class SecurityConfig {
 
                 // 3. Define URL Access Permissions
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/v1/public/**").permitAll()
+                        // =====================================================
+                        // PUBLIC ENDPOINTS (No Authentication Required)
+                        // =====================================================
+                        // View public announcements, leadership, and public info
+                        .requestMatchers("GET", "/api/v1/public/**").permitAll()
+                        .requestMatchers("OPTIONS", "/api/v1/public/**").permitAll()
                         
-                        // Auth & Registration endpoints (Public)
-                        .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/resident/register").permitAll()
+                        // Authentication endpoints (Login & Register)
+                        .requestMatchers("POST", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("POST", "/api/v1/auth/**").permitAll()
+                        .requestMatchers("POST", "/api/v1/resident/register").permitAll()
                         
-                        // Resident endpoints (require RESIDENT or ADMIN role)
-                        .requestMatchers("/api/v1/resident/**").hasAnyRole("RESIDENT", "ADMIN")
+                        // =====================================================
+                        // RESIDENT ENDPOINTS (RESIDENT or ADMIN role required)
+                        // =====================================================
+                        // View resident profile
+                        .requestMatchers("GET", "/api/v1/resident/profile/**").hasAnyRole("RESIDENT", "ADMIN")
+                        // Update profile (PUT, PATCH)
+                        .requestMatchers("PUT", "/api/v1/resident/profile/**").hasAnyRole("RESIDENT", "ADMIN")
+                        .requestMatchers("PATCH", "/api/v1/resident/profile/**").hasAnyRole("RESIDENT", "ADMIN")
                         
-                        // Admin endpoints (require ADMIN role)
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        // Letter endpoints (RESIDENT only)
+                        .requestMatchers("POST", "/api/v1/resident/letters/apply").hasRole("RESIDENT")
+                        .requestMatchers("GET", "/api/v1/resident/letters/**").hasAnyRole("RESIDENT", "ADMIN")
+                        
+                        // Issue endpoints (RESIDENT only)
+                        .requestMatchers("POST", "/api/v1/resident/issues/report").hasRole("RESIDENT")
+                        .requestMatchers("GET", "/api/v1/resident/issues/**").hasAnyRole("RESIDENT", "ADMIN")
+                        
+                        // =====================================================
+                        // ADMIN ENDPOINTS (ADMIN or STAFF role required)
+                        // =====================================================
+                        
+                        // Resident Management (ADMIN/STAFF)
+                        .requestMatchers("GET", "/api/v1/admin/residents").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("PUT", "/api/v1/admin/residents/**").hasRole("ADMIN")
+                        .requestMatchers("PATCH", "/api/v1/admin/residents/**").hasRole("ADMIN")
+                        .requestMatchers("DELETE", "/api/v1/admin/residents/**").hasRole("ADMIN")
+                        
+                        // Letter Management (ADMIN/STAFF)
+                        .requestMatchers("GET", "/api/v1/admin/letters").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("PUT", "/api/v1/admin/letters/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("PATCH", "/api/v1/admin/letters/**").hasAnyRole("ADMIN", "STAFF")
+                        
+                        // Issue Management (ADMIN/STAFF)
+                        .requestMatchers("GET", "/api/v1/admin/issues").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("PUT", "/api/v1/admin/issues/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("PATCH", "/api/v1/admin/issues/**").hasAnyRole("ADMIN", "STAFF")
+                        
+                        // Announcement Management (ADMIN only)
+                        .requestMatchers("POST", "/api/v1/admin/announcements").hasRole("ADMIN")
+                        .requestMatchers("PUT", "/api/v1/admin/announcements/**").hasRole("ADMIN")
+                        .requestMatchers("PATCH", "/api/v1/admin/announcements/**").hasRole("ADMIN")
+                        .requestMatchers("DELETE", "/api/v1/admin/announcements/**").hasRole("ADMIN")
                         
                         // All other requests require authentication
                         .anyRequest().authenticated()
