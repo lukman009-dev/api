@@ -3,8 +3,11 @@ package com.shehia_management.api.service.impl;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.shehia_management.api.dto.IssueReportRequest;
+import com.shehia_management.api.dto.LetterApplicationRequest;
 import com.shehia_management.api.entity.*;
 import com.shehia_management.api.enums.*;
 import com.shehia_management.api.repository.*;
@@ -23,9 +26,14 @@ public class ShehiaServiceImpl implements ShehiaService {
     private final LetterApplicationRepository letterRepository;
     private final IssueReportRepository issueRepository;
     private final AnnouncementRepository announcementRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public User registerResident(User user) {
+        // Hash the password before persisting
+        if (user.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
         user.setRole(Role.ROLE_RESIDENT);
         user.setStatus(UserStatus.PENDING);
         return userRepository.save(user);
@@ -51,8 +59,8 @@ public class ShehiaServiceImpl implements ShehiaService {
     }
 
     @Override
-    public LetterApplication applyForLetter(Long residentId, LetterType type, String formData, String docUrl) {
-        User resident = userRepository.findById(residentId)
+    public LetterApplication applyForLetter(LetterApplicationRequest request) {
+        User resident = userRepository.findById(request.getResidentId())
                 .orElseThrow(() -> new RuntimeException("Resident not found"));
 
         String refNumber = "REF-" + (1000 + new Random().nextInt(9000));
@@ -60,9 +68,9 @@ public class ShehiaServiceImpl implements ShehiaService {
         LetterApplication application = LetterApplication.builder()
                 .referenceNumber(refNumber)
                 .resident(resident)
-                .letterType(type)
-                .dynamicFormData(formData)
-                .supportingDocUrl(docUrl)
+                .letterType(request.getType())
+                .dynamicFormData(request.getFormData())
+                .supportingDocUrl(request.getDocUrl())
                 .status(LetterStatus.PENDING)
                 .build();
 
@@ -95,8 +103,8 @@ public class ShehiaServiceImpl implements ShehiaService {
     }
 
     @Override
-    public IssueReport reportIssue(Long residentId, IssueCategory category, IssuePriority priority, String location, String desc, String photoUrl) {
-        User resident = userRepository.findById(residentId)
+    public IssueReport reportIssue(IssueReportRequest request) {
+        User resident = userRepository.findById(request.getResidentId())
                 .orElseThrow(() -> new RuntimeException("Resident not found"));
 
         String repNumber = "REP-" + String.format("%03d", new Random().nextInt(1000));
@@ -104,11 +112,11 @@ public class ShehiaServiceImpl implements ShehiaService {
         IssueReport issue = IssueReport.builder()
                 .reportNumber(repNumber)
                 .resident(resident)
-                .category(category)
-                .priority(priority)
-                .location(location)
-                .description(desc)
-                .photoUrl(photoUrl)
+                .category(request.getCategory())
+                .priority(request.getPriority())
+                .location(request.getLocation())
+                .description(request.getDescription())
+                .photoUrl(request.getPhotoUrl())
                 .status(IssueStatus.PENDING)
                 .build();
 

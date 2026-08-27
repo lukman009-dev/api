@@ -3,12 +3,11 @@ package com.shehia_management.api.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.shehia_management.api.dto.IssueReportRequest;
+import com.shehia_management.api.dto.LetterApplicationRequest;
 import com.shehia_management.api.entity.IssueReport;
 import com.shehia_management.api.entity.LetterApplication;
 import com.shehia_management.api.entity.User;
-import com.shehia_management.api.enums.IssueCategory;
-import com.shehia_management.api.enums.IssuePriority;
-import com.shehia_management.api.enums.LetterType;
 import com.shehia_management.api.service.ShehiaService;
 
 import java.util.List;
@@ -31,12 +30,8 @@ public class ResidentController {
     }
 
     @PostMapping("/letters/apply")
-    public ResponseEntity<LetterApplication> applyForLetter(
-            @RequestParam Long residentId,
-            @RequestParam LetterType type,
-            @RequestParam String formData,
-            @RequestParam(required = false) String docUrl) {
-        return ResponseEntity.ok(shehiaService.applyForLetter(residentId, type, formData, docUrl));
+    public ResponseEntity<LetterApplication> applyForLetter(@RequestBody LetterApplicationRequest request) {
+        return ResponseEntity.ok(shehiaService.applyForLetter(request));
     }
 
     @GetMapping("/letters/{residentId}")
@@ -45,14 +40,8 @@ public class ResidentController {
     }
 
     @PostMapping("/issues/report")
-    public ResponseEntity<IssueReport> reportIssue(
-            @RequestParam Long residentId,
-            @RequestParam IssueCategory category,
-            @RequestParam IssuePriority priority,
-            @RequestParam String location,
-            @RequestParam String description,
-            @RequestParam(required = false) String photoUrl) {
-        return ResponseEntity.ok(shehiaService.reportIssue(residentId, category, priority, location, description, photoUrl));
+    public ResponseEntity<IssueReport> reportIssue(@RequestBody IssueReportRequest request) {
+        return ResponseEntity.ok(shehiaService.reportIssue(request));
     }
 
     @GetMapping("/issues/{residentId}")
