@@ -24,10 +24,10 @@ public class JwtConfig {
 
     public String generateToken(String zanId, String role) {
         return Jwts.builder()
-                .subject(zanId)
+                .setSubject(zanId)
                 .claim("role", role)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
